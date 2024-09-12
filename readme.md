@@ -1,6 +1,6 @@
 # My Homelab Services Display App
 
-This is an Electron app that displays the services running in my homelab. The backend of the app is powered by a Flask API. It is primarily designed to show services running on Proxmox, but it can also display any HTTP service.
+This is an Electron app that displays the services running in my homelab. The backend of the app is powered by a Flask API. It is primarily designed to show services running on Proxmox, but it can also display any HTTP service. The app is focused on being used on a Raspberry Pi with a 3.5' screen.
 
 ## Features
 
@@ -44,6 +44,29 @@ The backend of this app is a Flask API that performs the following tasks:
 3. Run the Flask app using the command `python app.py`.
 
 The backend will start a thread to monitor the services and will be accessible at `http://0.0.0.0:5000`.
+
+## Autostart Configuration
+
+If you want the app to start on boot, add the following two files in `.config/autostart`:
+
+### Electron App
+
+```ini
+[Desktop Entry]
+Type=Application
+Name=Electron App
+Exec=sh -c 'cd /home/pi/display-services && npm start > electron.log 2>&1'
+X-GNOME-Autostart-enabled=true
+```
+
+```ini
+[Desktop Entry]
+Type=Application
+Name=Python Server
+Exec=sh -c 'cd /home/pi/display-services && python3 app.py'
+X-GNOME-Autostart-enabled=true
+```
+
 
 ## Technologies Used
 
