@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Sistema</title>
+    <style>
+        /* Establece que el cursor esté oculto en toda la ventana */
+        body {
+            /* cursor: none; */
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+            /* Oculta las barras de desplazamiento */
+        }
+
+        /* Asegurarse de que el contenido ocupe toda la pantalla */
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            /* tipografia inter */
+            font-family: 'Inter', sans-serif;
+
+            --cpu-color: #469fc9;
+
+            --memory-color: #f7b731;
+
+            --running-color: #adeec8;
+            --stopped-color: #fff;
+            --max-mem-color: #fa7060;
+            --unknown-color: #95a5a6;
+
+        }
+
+        #server {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            gap: 10px;
+            padding: 10px;
+            background-color: #fff;
+        }
+
+        #server>h1 {
+            margin: 0;
+            margin-right: 20px;
+            font-size: 20px;
+            color: #202020;
+            font-weight: 600;
+        }
+
+        .header-content {
+            padding-left: 10px;
+            padding-right: 10px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            border-radius: 10px;
+            height: 20px;
+            width: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+
+        .header-content>p {
+            z-index: 30;
+            margin: 0;
+            font-size: 16px;
+            color: #202020;
+            font-weight: 600;
+        }
+
+        /* crea una barra de progreso */
+        #cpu::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: var(--cpu);
+            height: 100%;
+            background-color: var(--cpu-color);
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            z-index: 10;
+        }
+
+        #memory::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: var(--memory);
+            height: 100%;
+            background-color: var(--memory-color);
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            z-index: 10;
+        }
+
+        #containers {
+            display: grid;
+            /*3 columns justify center*/
+            grid-template-columns: repeat(4, 1fr);
+            gap: 7px;
+            justify-items: center;
+            align-items: center;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            width: 100%;
+            position: relative;
+        }
+
+        .icon-container {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+        }
+
+        .icon-container svg {
+            width: 12px;
+            height: 12px;
+            margin: 0;
+        }
+
+        .vm {
+            padding-top: 5px;
+            padding-left: 3px;
+            padding-right: 3px;
+            padding-bottom: 5px;
+            border-radius: 10px;
+            height: 40px;
+            width: 100px;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .vm h2 {
+            margin: 0;
+            font-size: 14px;
+            text-overflow: clip;
+            overflow: hidden;
+            height: 16px;
+        }
+
+        .vm p {
+            margin: 0;
+            font-size: 12px;
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <section id="server">
+        <h1>proxmox.local </h1>
+        <div id="cpu" class="header-content">
+            <p></p>
+        </div>
+        <div id="memory" class="header-content">
+            <p></p>
+        </div>
+    </section>
+    <section id="containers">
+    </section>
+
+
+    <template id="vm-template">
+        <div class="vm">
+            <h2 id="title-container">VM</h2>
+            <div class="conntent-container">
+                <p id="status-container">Status</p>
+            </div>
+        </div>
+    </template>
+
+    <template id="lxc-icon">
+        <div class="icon-container">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <title>container-optimize</title>
+                <g id="Layer_2" data-name="Layer 2">
+                    <g id="invisible_box" data-name="invisible box">
+                        <rect width="48" height="48" fill="none" />
+                    </g>
+                    <g id="icons_Q2" data-name="icons Q2">
+                        <path
+                            d="M42.9,12.2l-18-9L24,3l-.9.2-18,9A1.9,1.9,0,0,0,4,14V33.8a1.9,1.9,0,0,0,1.1,1.8l18,9.2.9.2.9-.2,18-9.2A1.9,1.9,0,0,0,44,33.8V14A1.9,1.9,0,0,0,42.9,12.2ZM24,7.2l14.6,7.3L24,21.9,9.4,14.5ZM8,18.3l14,7.1V39.7L8,32.6ZM26,39.7V25.4l14-7.1V32.6Z" />
+                    </g>
+                </g>
+            </svg>
+        </div>
+    </template>
+
+    <template id="vm-icon">
+        <div class="icon-container">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M18 7H18.01M15 7H15.01M18 17H18.01M15 17H15.01M6 10H18C18.9319 10 19.3978 10 19.7654 9.84776C20.2554 9.64477 20.6448 9.25542 20.8478 8.76537C21 8.39782 21 7.93188 21 7C21 6.06812 21 5.60218 20.8478 5.23463C20.6448 4.74458 20.2554 4.35523 19.7654 4.15224C19.3978 4 18.9319 4 18 4H6C5.06812 4 4.60218 4 4.23463 4.15224C3.74458 4.35523 3.35523 4.74458 3.15224 5.23463C3 5.60218 3 6.06812 3 7C3 7.93188 3 8.39782 3.15224 8.76537C3.35523 9.25542 3.74458 9.64477 4.23463 9.84776C4.60218 10 5.06812 10 6 10ZM6 20H18C18.9319 20 19.3978 20 19.7654 19.8478C20.2554 19.6448 20.6448 19.2554 20.8478 18.7654C21 18.3978 21 17.9319 21 17C21 16.0681 21 15.6022 20.8478 15.2346C20.6448 14.7446 20.2554 14.3552 19.7654 14.1522C19.3978 14 18.9319 14 18 14H6C5.06812 14 4.60218 14 4.23463 14.1522C3.74458 14.3552 3.35523 14.7446 3.15224 15.2346C3 15.6022 3 16.0681 3 17C3 17.9319 3 18.3978 3.15224 18.7654C3.35523 19.2554 3.74458 19.6448 4.23463 19.8478C4.60218 20 5.06812 20 6 20Z"
+                    stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </div>
+    </template>
+
+    <template id="other-icon">
+        <div class="icon-container">
+            <svg fill="#000000" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M 43.6327 20.5937 C 48.0860 20.5937 51.7657 16.9141 51.7657 12.4610 C 51.7657 8.0078 48.1091 4.3281 43.6327 4.3281 C 39.1796 4.3281 35.5233 8.0078 35.5233 12.4610 C 35.5233 16.9141 39.1796 20.5937 43.6327 20.5937 Z M 4.2343 39.1797 C 4.2343 43.1875 4.5858 46.5156 6.9765 48.9063 C 9.3671 51.2969 12.7421 51.6719 16.7499 51.6719 L 34.9608 51.6719 C 38.9452 51.6719 42.3202 51.2969 44.7108 48.9063 C 47.1016 46.5156 47.4529 43.1875 47.4529 39.1797 L 47.4529 23.2188 C 46.4219 23.5703 45.2968 23.7578 44.1249 23.7344 C 43.9608 23.7578 43.8436 23.7578 43.6796 23.7813 L 43.6796 39.8125 C 43.6796 42.2500 43.3749 44.7344 41.9687 46.1641 C 40.5389 47.5703 38.0077 47.8984 35.5936 47.8984 L 16.0936 47.8984 C 13.6796 47.8984 11.1484 47.5703 9.7421 46.1641 C 8.3124 44.7344 8.0077 42.2500 8.0077 39.8125 L 8.0077 20.5703 C 8.0077 18.1094 8.3124 15.5781 9.7187 14.1719 C 11.1484 12.7422 13.7030 12.4375 16.1640 12.4375 L 32.3358 12.4375 C 32.3358 12.2735 32.3593 12.1328 32.3827 11.9922 C 32.3593 10.8203 32.5233 9.6953 32.8984 8.6641 L 16.6796 8.6641 C 12.7421 8.6641 9.3671 9.0391 6.9765 11.4297 C 4.5858 13.8203 4.2343 17.1719 4.2343 21.0859 Z" />
+            </svg>
+        </div>
+    </template>
+
+
+    <script type="module">
+        import { fetchData } from './fetch-data.js';
+
+        const cpuBlock = document.getElementById('cpu');
+        const memoryBlock = document.getElementById('memory');
+        const containersBlock = document.getElementById('containers');
+
+        const colorStatus = {
+            running: 'var(--running-color)',
+            up: 'var(--running-color)',
+            stopped: 'var(--stopped-color)',
+            down: 'var(--stopped-color)',
+            unknown: 'var(--unknown-color)',
+            maxmem: 'var(--max-mem-color)'
+        }
+
+        function createContainer(container, type) {
+            const template = document.getElementById('vm-template');
+            const clone = template.content.cloneNode(true);
+            const vm = clone.querySelector('.vm');
+            if (type === 'lxc') {
+                const icon = document.getElementById('lxc-icon');
+                vm.appendChild(icon.content.cloneNode(true));
+            } else if (type === 'vm') {
+                const icon = document.getElementById('vm-icon');
+                vm.appendChild(icon.content.cloneNode(true));
+            } else {
+                const icon = document.getElementById('other-icon');
+                vm.appendChild(icon.content.cloneNode(true));
+            }
+
+
+            let statusCT = container.status;
+            if (container.status !== 'running' && container.status !== 'stopped' && container.status !== 'down' && container.status !== 'up') {
+                statusCT = 'unknown';
+            }
+            else if (container.status === 'running' && container.mem / container.maxmem > 0.85) {
+                statusCT = 'maxmem';
+            }
+            vm.style.backgroundColor = colorStatus[statusCT];
+            const status = clone.querySelector('#status-container');
+            const title = clone.querySelector('#title-container');
+            status.textContent = container.status;
+            title.textContent = container.name;
+            containersBlock.appendChild(vm);
+        }
+
+        // Simula una llamada a una API o backend
+        async function updateData() {
+            const { cpu, memory, maxmemory, containers, VM, services } = await fetchData();
+
+            try {
+                cpuBlock.innerHTML = `<p>${(cpu * 24).toFixed(2)}%</p>`;
+                memoryBlock.innerHTML = `<p>${(memory / 1024 ** 3).toFixed(2)} MB</p>`;
+
+                console.log(cpu.toFixed(2) * 24);
+                // set the values as css variables
+                document.documentElement.style.setProperty('--cpu', (cpu * 24).toFixed(2) + '%');
+                document.documentElement.style.setProperty('--memory', (memory / maxmemory * 100).toFixed(3) + '%');
+
+                containersBlock.innerHTML = '';
+                console.log(containers);
+
+                containers.forEach((container, index) => {
+                    createContainer(container, "lxc");
+                });
+
+                VM.forEach((container, index) => {
+                    createContainer(container, "vm");
+                });
+
+                services.forEach((container, index) => {
+                    createContainer(container, "other");
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // setInterval(updateData, 4000);
+        updateData();
+    </script>
+</body>
+
+</html>
